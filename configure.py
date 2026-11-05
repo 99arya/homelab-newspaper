@@ -147,6 +147,37 @@ def choose_weather(current):
     return {"name": hit["name"], "lat": round(hit["latitude"], 3), "lon": round(hit["longitude"], 3), "units": units}
 
 
+def geocode(place):
+    import urllib.parse
+    import urllib.request
+    url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + urllib.parse.quote(place)
+    req = urllib.request.Request(url, headers={"User-Agent": "homelab-newspaper-setup/1.0"})
+    hit = json.loads(urllib.request.urlopen(req, timeout=20).read())[0]
+    return [round(float(hit["lat"]), 4), round(float(hit["lon"]), 4)], hit["display_name"]
+
+
+def choose_commute(current):
+    current = current or {}
+    start = ask("Commute: where do you start (address or area, or 'none')", current.get("from", "none"))
+    if start.lower() == "none":
+        return {}
+    end = ask("Commute: where to (address)", current.get("to", ""))
+    if current.get("from") == start and current.get("to") == end:
+        return current
+    try:
+        a, an = geocode(start)
+        b, bn = geocode(end)
+    except Exception:
+        print(f"  {R}Couldn't find one of those places. Skipping the commute box.{X}")
+        return {}
+    print(f"  {G}{an[:70]}\n  → {bn[:70]}{X}")
+    label = ask("Short label for the box", f"{start.split(',')[0]} → {end.split(',')[0]}")
+    key = ask("TomTom API key for live traffic (free at developer.tomtom.com, or 'none')",
+              current.get("tomtom_key") or "none")
+    return {"label": label, "from": start, "to": end, "from_coords": a, "to_coords": b,
+            "tomtom_key": "" if key.lower() == "none" else key}
+
+
 def write_units(cfg):
     UNITS.mkdir(parents=True, exist_ok=True)
     name = cfg["paper_name"]
@@ -213,6 +244,14 @@ def main():
         cfg["tip_kinds"] = mix[ask("Tips about tech (coding, AI), life (habits, money, health), or both",
                                    now, lambda a: a in mix)]
     cfg["weather"] = choose_weather(cfg.get("weather"))
+    cfg["commute"] = choose_commute(cfg.get("commute"))
+    fx = cfg.get("exchange_rate") or {}
+    pair = ask("Exchange rate to show, like CAD-INR or USD-EUR (or 'none')",
+               f"{fx['from']}-{fx['to']}" if fx else "none",
+               lambda a: a.lower() == "none" or re.fullmatch(r"[A-Za-z]{3}-[A-Za-z]{3}", a) is not None)
+    cfg["exchange_rate"] = {} if pair.lower() == "none" else dict(zip(("from", "to"), pair.upper().split("-")))
+    cfg["express_entry"] = yes("Canadian Express Entry draw results (for people immigrating to Canada)?",
+                               cfg.get("express_entry", False))
 
     step("Printer")
     uri, ip, duplex = choose_printer(cfg)

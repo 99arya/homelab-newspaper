@@ -251,6 +251,71 @@ def weather_today(place):
         return None
 
 
+def commute_today(c):
+    """Drive time between two places. Live traffic with a TomTom key, otherwise clear-road time (OSRM)."""
+    if not c or "from_coords" not in c:
+        return None
+    (alat, alon), (blat, blon) = c["from_coords"], c["to_coords"]
+    try:
+        if c.get("tomtom_key"):
+            url = (f"https://api.tomtom.com/routing/1/calculateRoute/{alat},{alon}:{blat},{blon}/json"
+                   f"?traffic=true&departAt=now&key={urllib.parse.quote(c['tomtom_key'])}")
+            s = json.loads(fetch(url))["routes"][0]["summary"]
+            mins, km, live = s["travelTimeInSeconds"] / 60, s["lengthInMeters"] / 1000, True
+            delay = s.get("trafficDelayInSeconds", 0) / 60
+        else:
+            url = f"https://router.project-osrm.org/route/v1/driving/{alon},{alat};{blon},{blat}?overview=false"
+            r = json.loads(fetch(url))["routes"][0]
+            mins, km, live, delay = r["duration"] / 60, r["distance"] / 1000, False, 0
+        return {"label": c.get("label", ""), "mins": round(mins), "km": round(km), "live": live, "delay": round(delay)}
+    except Exception as e:
+        log(f"  commute skipped: {e}")
+        return None
+
+
+CURRENCY = {"INR": "₹", "USD": "US$", "EUR": "€", "GBP": "£", "CAD": "C$", "AUD": "A$", "JPY": "¥", "CNY": "¥",
+            "PHP": "₱", "PKR": "Rs ", "NGN": "₦", "MXN": "MX$", "AED": "AED "}
+
+
+def fx_today(fx):
+    """Exchange rate and its change over a week, from Frankfurter (European Central Bank rates, free)."""
+    if not fx:
+        return None
+    base, quote = fx.get("from", "CAD"), fx.get("to", "INR")
+    try:
+        now = json.loads(fetch(f"https://api.frankfurter.dev/v1/latest?from={base}&to={quote}"))
+        week = (dt.date.fromisoformat(now["date"]) - dt.timedelta(days=7)).isoformat()
+        then = json.loads(fetch(f"https://api.frankfurter.dev/v1/{week}?from={base}&to={quote}"))
+        rate, old = now["rates"][quote], then["rates"][quote]
+        return {"base": base, "quote": quote, "rate": rate, "change": rate - old, "date": now["date"],
+                "sym": CURRENCY.get(quote, quote + " ")}
+    except Exception as e:
+        log(f"  exchange rate skipped: {e}")
+        return None
+
+
+def express_entry_today():
+    """Latest Express Entry draw, and the latest CRS cutoff, from CIC News's Express Entry feed."""
+    try:
+        items = parse_feed("https://www.cicnews.com/category/express-entry/feed")
+    except Exception as e:
+        log(f"  Express Entry skipped: {e}")
+        return None
+    draws = []
+    for s in items:
+        text = clean(s["summary"])
+        m = re.search(r"issued ([\d,]+) (?:ITAs|invitations)[^.]*? draw for ([^.]+)\.", text)
+        if not m:
+            continue
+        what = re.sub(r"^(?:Express Entry )?candidates (?:eligible under|with|in) (?:the )?", "", m.group(2))
+        crs = re.search(r"CRS\)? score of (\d{3})", text)
+        draws.append({"date": s["date"], "itas": m.group(1), "what": what.strip(), "crs": crs and crs.group(1)})
+    if not draws:
+        return None
+    with_crs = next((d for d in draws if d["crs"]), None)
+    return {"latest": draws[0], "crs": with_crs}
+
+
 def save_used(used, quote, tip):
     if quote:
         used["quotes"] = (used["quotes"] + [quote[0]])[-1000:]
@@ -430,6 +495,10 @@ body { font-family: 'Source Serif 4', Georgia, 'DejaVu Serif', serif; color: #11
 .boxes { display: flex; gap: 12px; margin-bottom: 8px; }
 .box { flex: 1; border: 1px solid #111; padding: 5px 8px; }
 .box.wx { flex: 0 0 1.9in; }
+.brief { margin-top: -3px; }
+.brief .box { padding: 4px 8px; }
+.brief .big { font-size: 11.5pt; }
+.brief .note { font-size: 7.6pt; color: #333; margin-top: 1px; }
 .wx .temp { font-weight: 700; font-size: 16pt; line-height: 1.1; }
 .wx .temp span { font-size: 11pt; font-weight: 400; }
 .wx .sun { font-size: 7.6pt; margin-top: 2px; }
@@ -529,7 +598,36 @@ def section_html(name, stories):
     return "<section>" + article_html(stories[0], name) + "".join(article_html(s) for s in stories[1:]) + "</section>"
 
 
-def boxes_html(quote, tip, weather=None):
+def short_date(d):
+    return d.astimezone().strftime("%b %-d") if d else ""
+
+
+def brief_html(commute=None, fx=None, ee=None):
+    """Second row of small boxes: commute, exchange rate, Express Entry."""
+    parts = []
+    if commute:
+        how = (f"{commute['mins']} min with traffic now" + (f" ({commute['delay']} min delay)" if commute["delay"] else "")
+               if commute["live"] else f"{commute['mins']} min on clear roads · allow extra at rush hour")
+        parts.append(f"<div class='box'><h5>Commute · {html.escape(commute['label'])}</h5>"
+                     f"<p><b class='big'>{commute['mins']} min</b> · {commute['km']} km</p><p class='note'>{how}</p></div>")
+    if fx:
+        arrow = "▲" if fx["change"] > 0 else "▼" if fx["change"] < 0 else "■"
+        parts.append(f"<div class='box'><h5>{fx['base']} → {fx['quote']}</h5>"
+                     f"<p><b class='big'>{fx['sym']}{fx['rate']:.2f}</b> per 1 {fx['base']}</p>"
+                     f"<p class='note'>{arrow} {abs(fx['change']):.2f} this week · ECB rate, {dt.date.fromisoformat(fx['date']):%b %-d}</p></div>")
+    if ee:
+        d, c = ee["latest"], ee["crs"]
+        cut = ""
+        if c:
+            cut = (f"<b class='big'>CRS {c['crs']}</b> " +
+                   ("cutoff" if c is d else f"last cutoff ({html.escape(c['what'])}, {short_date(c['date'])})"))
+        parts.append(f"<div class='box'><h5>Express Entry · latest draw</h5>"
+                     f"<p>{cut}</p><p class='note'>{short_date(d['date'])}: {d['itas']} invitations, "
+                     f"{html.escape(d['what'])}.</p></div>")
+    return f"<div class='boxes brief'>{''.join(parts)}</div>" if parts else ""
+
+
+def boxes_html(quote, tip, weather=None, commute=None, fx=None, ee=None):
     parts = []
     if weather:
         rain = f", {weather['rain']}% chance of rain" if weather["rain"] else ""
@@ -543,7 +641,8 @@ def boxes_html(quote, tip, weather=None):
     if tip:
         parts.append(f"<div class='box'><h5>Tip of the day · {html.escape(tip.get('topic', ''))}</h5>"
                      f"<p><span class='tip-title'>{html.escape(tip['title'])}.</span> {html.escape(tip['tip'])}</p></div>")
-    return f"<div class='boxes'>{''.join(parts)}</div>" if parts else ""
+    top = f"<div class='boxes'>{''.join(parts)}</div>" if parts else ""
+    return top + brief_html(commute, fx, ee)
 
 
 def build_html(cfg, sections, extras=None):
@@ -721,7 +820,10 @@ def run(cfg):
     kinds = cfg.get("tip_kinds", ["tech", "life"])
     extras = {"quote": quote_of_the_day(used) if cfg.get("quote_of_the_day", True) else None,
               "tip": tip_of_the_day(used, kinds) if cfg.get("tip_of_the_day", True) else None,
-              "weather": weather_today(cfg.get("weather"))}
+              "weather": weather_today(cfg.get("weather")),
+              "commute": commute_today(cfg.get("commute")),
+              "fx": fx_today(cfg.get("exchange_rate")),
+              "ee": express_entry_today() if cfg.get("express_entry") else None}
     if not Path(CHROME).exists():  # WeasyPrint can measure pages, so fill every one
         fill_pages(cfg, sections, spares, extras)
     html_path.write_text(build_html(cfg, [(n, list(s)) for n, s in sections], extras), encoding="utf-8")

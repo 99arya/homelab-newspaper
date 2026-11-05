@@ -10,6 +10,7 @@ Your own printed morning newspaper. Every day it pulls news from the sections yo
 - **Biggest news first**: sections are reordered every day by how widely their stories are covered, while still respecting your own priority order. The top story is the day's most important one.
 - **No repeats, but follow-ups get through**: yesterday's stories aren't printed again. New developments, court updates and series parts ("Part 2") still are.
 - **Weather box**: today's high and low, rain chance, sunrise and sunset for your city (Open-Meteo, no key needed).
+- **Morning briefing**: drive time for your commute (clear-road time, or live traffic with a free TomTom key), an exchange rate of your choice with its weekly change, and, for people immigrating to Canada, the latest Express Entry draw and CRS cutoff.
 - **Fills every page**: pages are packed top to bottom, and leftover space gets extra stories from your top sections.
 - **A QR code on every story**: scan it with your phone to read the full article.
 - **Quote of the day and tip of the day**: tech tips (AI coding, React, CSS, Git) alternate with life tips (habits, money, health, home), and seasonal ones appear in their months. Neither repeats.
@@ -66,6 +67,9 @@ Everything lives in `config.json`, which the wizard writes. You can edit it dire
 | `no_repeat_days` | How many days a printed story stays blocked (default 1). Only the same link or a near-identical headline is blocked |
 | `tip_kinds` | `["tech", "life"]`, or just one of them |
 | `weather` | `{name, lat, lon, units}`; the wizard fills it from a city name |
+| `commute` | `{label, from_coords, to_coords, tomtom_key}`; the wizard geocodes addresses. Without `tomtom_key` it shows clear-road time (OSRM) |
+| `exchange_rate` | `{"from": "CAD", "to": "INR"}` (ECB rates via Frankfurter) |
+| `express_entry` | `true` to show the latest Express Entry draw and CRS cutoff (from CIC News) |
 | `healthcheck_url` | Pinged after each run: up with a story count, down with the reason |
 | `two_sided` | Double-sided printing (the paper fills the back of the last sheet) |
 | `max_age_hours`, `summary_words`, `keep_editions` | Freshness, summary length, and how many daily PDFs to keep |

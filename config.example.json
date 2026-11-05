@@ -90,5 +90,8 @@
     "life"
   ],
   "weather": {},
-  "healthcheck_url": ""
+  "healthcheck_url": "",
+  "commute": {},
+  "exchange_rate": {},
+  "express_entry": false
 }
