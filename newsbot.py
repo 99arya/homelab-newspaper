@@ -201,18 +201,54 @@ def quote_of_the_day(used):
     return None
 
 
-def tip_of_the_day(used):
-    """Every tip once before any repeats, and never the same topic two days running."""
+def tip_of_the_day(used, kinds=("tech", "life")):
+    """Shuffled: every tip once before any repeats, alternating tech and life tips,
+    never the same topic twice running, and seasonal tips only in their months."""
+    import random
     try:
         tips = json.loads((HERE / "tips.json").read_text())
     except (OSError, ValueError):
         return None
+    today = dt.date.today()
+    tips = [x for x in tips if x.get("kind", "tech") in kinds
+            and today.month in x.get("months", range(1, 13))]
     if not tips:
         return None
+    last = next((x for x in tips if used["tips"] and x["title"] == used["tips"][-1]), {})
     fresh = [x for x in tips if x["title"] not in used["tips"]] or tips  # all used: start a new round
-    last_topic = next((x["topic"] for x in tips if used["tips"] and x["title"] == used["tips"][-1]), None)
-    pool = [x for x in fresh if x["topic"] != last_topic] or fresh
-    return pool[dt.date.today().toordinal() % len(pool)]
+    for want in ([x for x in fresh if x.get("kind") != last.get("kind") and x["topic"] != last.get("topic")],
+                 [x for x in fresh if x["topic"] != last.get("topic")], fresh):
+        if want:
+            seasonal = [x for x in want if "months" in x]  # in season now: show those first
+            return random.Random(today.toordinal()).choice(seasonal or want)
+
+
+WEATHER = {0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Cloudy", 45: "Fog", 48: "Freezing fog",
+           51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle",
+           61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain",
+           71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Showers", 81: "Showers",
+           82: "Heavy showers", 85: "Snow showers", 86: "Heavy snow showers", 95: "Thunderstorms",
+           96: "Thunderstorms with hail", 99: "Thunderstorms with hail"}
+
+
+def weather_today(place):
+    """Today's forecast, sunrise and sunset from Open-Meteo (free, no key)."""
+    if not place or "lat" not in place:
+        return None
+    unit = place.get("units", "celsius")
+    url = ("https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&timezone=auto&forecast_days=1"
+           "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
+           f"&temperature_unit={unit}").format(**place)
+    try:
+        d = json.loads(fetch(url))["daily"]
+        t = lambda s: dt.datetime.fromisoformat(s).strftime("%-I:%M %p")
+        return {"place": place.get("name", ""), "sky": WEATHER.get(d["weather_code"][0], ""),
+                "hi": round(d["temperature_2m_max"][0]), "lo": round(d["temperature_2m_min"][0]),
+                "rain": d["precipitation_probability_max"][0], "sunrise": t(d["sunrise"][0]),
+                "sunset": t(d["sunset"][0])}
+    except Exception as e:
+        log(f"  weather skipped: {e}")
+        return None
 
 
 def save_used(used, quote, tip):
@@ -237,14 +273,14 @@ HISTORY = HERE / "history.json"
 
 
 def load_history(days):
-    """Links and title words of stories printed in the previous `days` days (not today's)."""
+    """Links and titles of stories printed in the previous `days` days (not today's)."""
     try:
         items = json.loads(HISTORY.read_text())
     except (OSError, ValueError):
         items = []
     today = dt.date.today()
     recent = [i for i in items if 0 < (today - dt.date.fromisoformat(i["date"])).days <= days]
-    return {tidy_url(i["link"]) for i in recent if i.get("link")}, [norm(i["title"]) for i in recent]
+    return {tidy_url(i["link"]) for i in recent if i.get("link")}, [i["title"] for i in recent]
 
 
 def save_history(sections, keep_days=30):
@@ -262,25 +298,73 @@ def save_history(sections, keep_days=30):
 
 
 def same_story(words, others):
+    """Loose match, for the same news covered by different outlets on the same day."""
     return any(len(words & w) >= max(3, len(words) // 2) for w in others)
 
 
-def pick_stories(cfg, section, seen, history=(set(), [])):
-    stories = []
-    with cf.ThreadPoolExecutor(8) as pool:
-        futures = {pool.submit(parse_feed, u): u for u in section["feeds"]}
+def already_printed(s, history):
+    """Strict match against earlier editions: the same link or an almost identical headline.
+    Follow-ups (new findings, court proceedings) and series parts have new headlines, so they get through."""
+    if tidy_url(s["link"]) in history[0]:
+        return True
+    words, digits = norm(s["title"]), set(re.findall(r"\d+", s["title"]))
+    for old in history[1]:
+        w = norm(old)
+        if words and w and len(words & w) / len(words | w) >= 0.7 and digits == set(re.findall(r"\d+", old)):
+            return True
+    return False
+
+
+def fetch_all(sections):
+    """Every feed of every section, fetched in parallel: {url: [stories]}."""
+    urls = list(dict.fromkeys(u for sec in sections for u in sec["feeds"]))
+    out = {}
+    with cf.ThreadPoolExecutor(12) as pool:
+        futures = {pool.submit(parse_feed, u): u for u in urls}
         for f in cf.as_completed(futures):
             try:
-                stories += f.result()
+                out[futures[f]] = f.result()
             except Exception as e:  # one broken feed shouldn't kill the paper
                 log(f"  skipped {futures[f]}: {e}")
+                out[futures[f]] = []
+    return out
 
+
+def coverage_counter(all_stories):
+    """How many other outlets carry the same story: a big story is everywhere."""
+    index = [(norm(s["title"]), s["source"]) for s in all_stories]
+
+    def count(s):
+        words = norm(s["title"])
+        return len({src for w, src in index if src != s["source"] and same_story(words, [w])})
+    return count
+
+
+def order_by_importance(sections, spares):
+    """Today's biggest news first. Your section order still counts: the first section gets
+    a 60% head start over the last one, so a quiet day keeps your usual order."""
+    n = len(sections)
+    rank = []
+    for i, ((name, stories), spare) in enumerate(zip(sections, spares)):
+        top = sorted((s["importance"] for s in stories), reverse=True)
+        base = top[0] + 0.5 * sum(top[1:3]) / max(1, len(top[1:3])) if top else -1
+        rank.append((base * (1 + 0.6 * (n - 1 - i) / max(1, n - 1)), i))
+    rank.sort(reverse=True)
+    sections = [sections[i] for _, i in rank]
+    if sections and sections[0][1]:  # the top story is the most important one, not just the first
+        top = sections[0][1]
+        top.insert(0, top.pop(max(range(len(top)), key=lambda k: top[k]["importance"])))
+    return sections, [spares[i] for _, i in rank]
+
+
+def pick_stories(cfg, section, stories, seen, history=(set(), []), coverage=lambda s: 0):
     now = dt.datetime.now(dt.timezone.utc)
     window = section.get("max_age_hours", cfg.get("max_age_hours", 36))
     cutoff = now - dt.timedelta(hours=window)
     boost = cfg.get("boost_keywords", []) + section.get("boost_keywords", [])
     exclude = cfg.get("exclude_keywords", []) + section.get("exclude_keywords", [])
 
+    outlets = len({s["source"] for s in stories})  # sections with few outlets can't show wide coverage
     ranked = []
     for s in stories:
         text = s["title"] + " " + s["summary"]
@@ -296,6 +380,10 @@ def pick_stories(cfg, section, seen, history=(set(), [])):
         score += 4 * sum(has_kw(s["title"], k) for k in boost)
         score += 1.5 * sum(has_kw(s["summary"], k) for k in boost)
         score += 1 if len(s["summary"]) > 120 else 0
+        cov = coverage(s)
+        score += min(3 * cov, 9)  # covered by several outlets = important today
+        reach = min(1.0, cov / max(1, min(3, outlets - 1)))  # share of the outlets that could cover it
+        s["importance"] = 10 - 9 * min(age_h, window) / window + 10 * reach  # keyword boosts don't count here
         ranked.append((score, s))
     ranked.sort(key=lambda x: x[0], reverse=True)
 
@@ -305,8 +393,8 @@ def pick_stories(cfg, section, seen, history=(set(), [])):
         words = norm(s["title"])
         if same_story(words, seen):
             continue  # same story from another outlet
-        if tidy_url(s["link"]) in history[0] or same_story(words, history[1]):
-            continue  # already printed in a recent edition
+        if already_printed(s, history):
+            continue  # printed in a recent edition (follow-ups are allowed)
         if any(same_story(words, [norm(r["title"])]) for r in reserve):
             continue
         s["words"] = section.get("summary_words", cfg.get("summary_words", 40))
@@ -324,13 +412,13 @@ def pick_stories(cfg, section, seen, history=(set(), [])):
 # ---------- layout ----------
 
 CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Old+Standard+TT:wght@700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@500;700&display=swap');
 @page { size: letter; margin: 0.4in 0.45in; }
 * { box-sizing: border-box; }
 body { font-family: 'Source Serif 4', Georgia, 'DejaVu Serif', serif; color: #111; margin: 0; font-size: 9.2pt; line-height: 1.28; }
 .kicker, .src, section h3, .dateline, .box h5 { font-family: 'Libre Franklin', Helvetica, 'DejaVu Sans', sans-serif; }
 .mast { text-align: center; border-bottom: 3px double #111; padding-bottom: 3px; }
-.mast h1 { font-family: 'Old Standard TT', 'Times New Roman', Georgia, serif; font-weight: 700; font-size: 46pt;
+.mast h1 { font-family: 'Playfair Display', 'Times New Roman', Georgia, serif; font-weight: 900; font-size: 34pt;
            margin: 0 0 2px; line-height: 1.2; letter-spacing: .5px; }
 .tag { font-style: italic; font-size: 8.5pt; }
 .dateline { display: flex; justify-content: space-between; border-bottom: 1px solid #111; font-size: 7.5pt;
@@ -341,6 +429,10 @@ body { font-family: 'Source Serif 4', Georgia, 'DejaVu Serif', serif; color: #11
 .kicker { font-size: 7pt; font-weight: bold; text-transform: uppercase; letter-spacing: .8px; }
 .boxes { display: flex; gap: 12px; margin-bottom: 8px; }
 .box { flex: 1; border: 1px solid #111; padding: 5px 8px; }
+.box.wx { flex: 0 0 1.9in; }
+.wx .temp { font-weight: 700; font-size: 16pt; line-height: 1.1; }
+.wx .temp span { font-size: 11pt; font-weight: 400; }
+.wx .sun { font-size: 7.6pt; margin-top: 2px; }
 .box h5 { margin: 0 0 3px; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.2px; }
 .box p { margin: 0; }
 .box .quote { font-style: italic; font-size: 10pt; }
@@ -437,8 +529,14 @@ def section_html(name, stories):
     return "<section>" + article_html(stories[0], name) + "".join(article_html(s) for s in stories[1:]) + "</section>"
 
 
-def boxes_html(quote, tip):
+def boxes_html(quote, tip, weather=None):
     parts = []
+    if weather:
+        rain = f", {weather['rain']}% chance of rain" if weather["rain"] else ""
+        parts.append(f"<div class='box wx'><h5>Today · {html.escape(weather['place'])}</h5>"
+                     f"<p class='temp'>{weather['hi']}° <span>/ {weather['lo']}°</span></p>"
+                     f"<p>{html.escape(weather['sky'])}{rain}.</p>"
+                     f"<p class='sun'>Sunrise {weather['sunrise']} · Sunset {weather['sunset']}</p></div>")
     if quote:
         parts.append(f"<div class='box'><h5>Quote of the day</h5><p class='quote'>“{html.escape(quote[0])}”</p>"
                      f"<div class='who'>— {html.escape(quote[1])}</div></div>")
@@ -448,7 +546,7 @@ def boxes_html(quote, tip):
     return f"<div class='boxes'>{''.join(parts)}</div>" if parts else ""
 
 
-def build_html(cfg, sections, quote=None, tip=None):
+def build_html(cfg, sections, extras=None):
     today = dt.date.today()
     lead_sec, lead = None, None
     for name, stories in sections:
@@ -467,22 +565,22 @@ def build_html(cfg, sections, quote=None, tip=None):
                      f"<h2><a href='{html.escape(lead['link'])}'>{html.escape(lead['title'])}</a></h2>"
                      f"<div class='src'>{html.escape(lead['source'])} · {when(lead['date'])}</div>"
                      + f"<p>{html.escape(clean(lead['summary'], 70))}</p></div>")
-    parts.append(boxes_html(quote, tip))
+    parts.append(boxes_html(**(extras or {})))
     parts.append("<div class='flow'>" + "".join(section_html(n, s) for n, s in sections if s) + "</div>")
     parts.append("</body></html>")  # no footer: it once spilled onto a sheet of its own
     return "".join(parts)
 
 
-def page_count(cfg, sections, quote, tip):
+def page_count(cfg, sections, extras):
     from weasyprint import HTML
-    doc = build_html(cfg, [(n, list(s)) for n, s in sections], quote, tip)
+    doc = build_html(cfg, [(n, list(s)) for n, s in sections], extras)
     return len(HTML(string=doc, base_url=str(HERE)).render().pages)
 
 
-def fill_pages(cfg, sections, spares, quote, tip):
+def fill_pages(cfg, sections, spares, extras):
     """Add spare stories, most important sections first, until the last page (and the back
     of the last sheet when printing two-sided) is full without spilling onto a new page."""
-    pages = page_count(cfg, sections, quote, tip)
+    pages = page_count(cfg, sections, extras)
     target = pages + (pages % 2 if cfg.get("two_sided", True) else 0)
     printed = [norm(s["title"]) for _, st in sections for s in st]
     queue = []  # round-robin: 1st spare of every section, then 2nd of every section, ...
@@ -494,7 +592,7 @@ def fill_pages(cfg, sections, spares, quote, tip):
         batch = [(i, s) for i, s in batch if not same_story(norm(s["title"]), printed)]
         for i, s in batch:
             sections[i][1].append(s)
-        if page_count(cfg, sections, quote, tip) <= target:
+        if page_count(cfg, sections, extras) <= target:
             added += len(batch)
             printed += [norm(s["title"]) for _, s in batch]
             continue
@@ -556,13 +654,40 @@ def prune(keep):
         old.with_suffix(".html").unlink(missing_ok=True)
 
 
+def report_health(cfg, ok, msg):
+    """Heartbeat for a monitor: Uptime Kuma push URL, healthchecks.io, or any URL that takes a GET."""
+    url = cfg.get("healthcheck_url", "")
+    if not url or "--no-print" in sys.argv:
+        return
+    if "/api/push/" in url:  # Uptime Kuma
+        url = url.split("?")[0] + "?" + urllib.parse.urlencode({"status": "up" if ok else "down", "msg": msg[:200]})
+    elif not ok:
+        url = url.rstrip("/") + "/fail"  # healthchecks.io convention
+    try:
+        fetch(url)
+    except Exception as e:
+        log(f"  health check ping failed: {e}")
+
+
 def main():
+    cfg = json.loads((HERE / "config.json").read_text())
+    try:
+        code, msg = run(cfg)
+    except Exception as e:
+        code, msg = 3, f"crashed: {type(e).__name__}: {e}"
+        report_health(cfg, False, msg)
+        raise
+    if code != 64:
+        report_health(cfg, code == 0, msg)
+    return code
+
+
+def run(cfg):
     unknown = [a for a in sys.argv[1:] if a != "--no-print"]
     if unknown:
         print(__doc__)
         print(f"Unknown option(s): {' '.join(unknown)}. Nothing was made or printed.")
-        return 64
-    cfg = json.loads((HERE / "config.json").read_text())
+        return 64, ""
     SETTINGS["shorten_links"] = bool(cfg.get("shorten_links", False))
     EDITIONS.mkdir(exist_ok=True)
     cache_file = HERE / "shortlinks.json"
@@ -570,29 +695,36 @@ def main():
         SHORT_CACHE.update(json.loads(cache_file.read_text()))
     except (OSError, ValueError):
         pass
-    history = load_history(cfg.get("no_repeat_days", 7))
-    log(f"Skipping {len(history[0])} stories already printed in the last {cfg.get('no_repeat_days', 7)} days")
+    days = cfg.get("no_repeat_days", 1)
+    history = load_history(days)
+    log(f"Gathering {sum(len(s['feeds']) for s in cfg['sections'])} feeds…")
+    feeds = fetch_all(cfg["sections"])
+    coverage = coverage_counter([s for items in feeds.values() for s in items])
     seen, sections, spares = [], [], []
     for sec in cfg["sections"]:
-        log(f"Gathering {sec['name']}…")
-        stories, spare = pick_stories(cfg, sec, seen, history)
-        log(f"  {len(stories)} stories (+{len(spare)} spare)")
+        items = [s for u in sec["feeds"] for s in feeds.get(u, [])]
+        stories, spare = pick_stories(cfg, sec, items, seen, history, coverage)
+        log(f"  {sec['name']}: {len(stories)} stories (+{len(spare)} spare)")
         sections.append((sec["name"], stories))
         spares.append(spare)
+    sections, spares = order_by_importance(sections, spares)
+    log("Order today: " + " > ".join(f"{n} ({max(x['importance'] for x in s):.0f})" for n, s in sections if s))
     if not any(s for _, s in sections):
         log("No stories found (offline?). Nothing printed.")
-        return 1
+        return 1, "no stories found (offline?)"
 
     printed = sections
     real_run = "--no-print" not in sys.argv
     stamp = f"{dt.date.today():%Y-%m-%d}" if real_run else "preview"  # tests never overwrite the real edition
     html_path, pdf_path = EDITIONS / f"{stamp}.html", EDITIONS / f"{stamp}.pdf"
     used = load_used()
-    quote = quote_of_the_day(used) if cfg.get("quote_of_the_day", True) else None
-    tip = tip_of_the_day(used) if cfg.get("tip_of_the_day", True) else None
+    kinds = cfg.get("tip_kinds", ["tech", "life"])
+    extras = {"quote": quote_of_the_day(used) if cfg.get("quote_of_the_day", True) else None,
+              "tip": tip_of_the_day(used, kinds) if cfg.get("tip_of_the_day", True) else None,
+              "weather": weather_today(cfg.get("weather"))}
     if not Path(CHROME).exists():  # WeasyPrint can measure pages, so fill every one
-        fill_pages(cfg, sections, spares, quote, tip)
-    html_path.write_text(build_html(cfg, [(n, list(s)) for n, s in sections], quote, tip), encoding="utf-8")
+        fill_pages(cfg, sections, spares, extras)
+    html_path.write_text(build_html(cfg, [(n, list(s)) for n, s in sections], extras), encoding="utf-8")
     if SHORT_CACHE:
         cache_file.write_text(json.dumps(dict(list(SHORT_CACHE.items())[-600:]), indent=0))
     to_pdf(html_path, pdf_path)
@@ -608,13 +740,14 @@ def main():
                 log(f"Print attempt {attempt} failed: {type(e).__name__}: {e}")
                 if attempt == 3:
                     log("Giving up on printing; the PDF is still saved.")
-                    return 2
+                    return 2, f"printing failed: {e}"
                 time.sleep(30)
     if real_run:
         save_history(printed)
-        save_used(used, quote, tip)
+        save_used(used, extras["quote"], extras["tip"])
     prune(cfg.get("keep_editions", 14))
-    return 0
+    n = sum(len(s) for _, s in sections)
+    return 0, f"{'printed' if cfg.get('print') else 'saved'} {n} stories"
 
 
 if __name__ == "__main__":

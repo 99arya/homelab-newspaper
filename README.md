@@ -7,10 +7,12 @@ Your own printed morning newspaper. Every day it pulls news from the sections yo
 ## Features
 
 - **Pick your sections**: 24 ready-made ones (World, US, Canada, UK, India, Tech, AI for developers, Frontend, Security, Self-hosting, Science, Sports and more), in the order you choose. You can also add any RSS feed.
-- **Never the same story twice**: anything printed in the last 7 days is skipped, even when another outlet rewords it.
+- **Biggest news first**: sections are reordered every day by how widely their stories are covered, while still respecting your own priority order. The top story is the day's most important one.
+- **No repeats, but follow-ups get through**: yesterday's stories aren't printed again. New developments, court updates and series parts ("Part 2") still are.
+- **Weather box**: today's high and low, rain chance, sunrise and sunset for your city (Open-Meteo, no key needed).
 - **Fills every page**: pages are packed top to bottom, and leftover space gets extra stories from your top sections.
 - **A QR code on every story**: scan it with your phone to read the full article.
-- **Quote of the day and developer tip of the day**: neither repeats.
+- **Quote of the day and tip of the day**: tech tips (AI coding, React, CSS, Git) alternate with life tips (habits, money, health, home), and seasonal ones appear in their months. Neither repeats.
 - **Prints with no drivers**: it talks to IPP Everywhere / AirPrint printers directly. That covers most network printers made in the last ten years, including ones that only accept raster images. No CUPS needed.
 - **Or no printer at all**: you still get a dated PDF every morning in `editions/`.
 
@@ -29,11 +31,20 @@ The wizard asks a few questions; press Enter to accept the default for each:
 1. The name of your paper and its tagline
 2. Your sections, most important first
 3. Topics to boost (for example `AI, Toronto, React`)
-4. Quote and tip of the day on or off
+4. Quote and tip of the day (tech, life or both), and your city for the weather
 5. Your printer: it finds printers on your network automatically, or choose "No printer" for PDF only
 6. Time zone and the time to make it each day
+7. Optional: an Uptime Kuma or healthchecks.io URL, so you get an alert if a morning's paper fails
 
 It then builds the Docker image, schedules the paper with a systemd user timer, and offers to make a preview. Run `./setup.sh` again any time to change your answers.
+
+### Or let your AI assistant set it up
+
+On your server, open Claude Code (or another coding agent) in the cloned folder and say:
+
+> Set up this newspaper bot for me. Follow AGENTS.md.
+
+It will ask about your sections, city and printer, then install everything.
 
 ## Everyday use
 
@@ -52,7 +63,10 @@ Everything lives in `config.json`, which the wizard writes. You can edit it dire
 |---|---|
 | `sections[]` | `name`, `stories` (how many), `feeds` (RSS/Atom URLs). Optional: `max_age_hours`, `boost_keywords`, `exclude_keywords`, `require_keywords` (a story must mention one of these) and `summary_words` |
 | `boost_keywords` / `exclude_keywords` | Rank stories up or drop them, across every section |
-| `no_repeat_days` | How long a printed story stays blocked (default 7) |
+| `no_repeat_days` | How many days a printed story stays blocked (default 1). Only the same link or a near-identical headline is blocked |
+| `tip_kinds` | `["tech", "life"]`, or just one of them |
+| `weather` | `{name, lat, lon, units}`; the wizard fills it from a city name |
+| `healthcheck_url` | Pinged after each run: up with a story count, down with the reason |
 | `two_sided` | Double-sided printing (the paper fills the back of the last sheet) |
 | `max_age_hours`, `summary_words`, `keep_editions` | Freshness, summary length, and how many daily PDFs to keep |
 | `print_time`, `timezone` | Re-run `./setup.sh` after changing these, so the timer is updated |

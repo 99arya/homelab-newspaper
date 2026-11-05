@@ -10,7 +10,7 @@
   "max_age_hours": 36,
   "summary_words": 38,
   "keep_editions": 14,
-  "no_repeat_days": 7,
+  "no_repeat_days": 1,
   "shorten_links": false,
   "quote_of_the_day": true,
   "tip_of_the_day": true,
@@ -84,5 +84,11 @@
         "https://www.theguardian.com/science/rss"
       ]
     }
-  ]
+  ],
+  "tip_kinds": [
+    "tech",
+    "life"
+  ],
+  "weather": {},
+  "healthcheck_url": ""
 }

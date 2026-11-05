@@ -127,6 +127,26 @@ def choose_printer(cfg):
     return uri, ip, duplex
 
 
+def choose_weather(current):
+    """City name → coordinates with Open-Meteo's free geocoder."""
+    import urllib.parse
+    import urllib.request
+    name = ask("City for the weather box (or 'none')", current.get("name", "none") if current else "none")
+    if name.lower() == "none":
+        return {}
+    if current and name == current.get("name"):
+        return current
+    try:
+        url = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + urllib.parse.quote(name)
+        hit = json.loads(urllib.request.urlopen(url, timeout=15).read())["results"][0]
+    except Exception:
+        print(f"  {R}Couldn't find '{name}'. Skipping the weather box; run setup again to retry.{X}")
+        return {}
+    print(f"  {G}{hit['name']}, {hit.get('admin1', '')} {hit.get('country', '')}{X}")
+    units = "fahrenheit" if hit.get("country_code") in ("US", "LR", "MM") else "celsius"
+    return {"name": hit["name"], "lat": round(hit["latitude"], 3), "lon": round(hit["longitude"], 3), "units": units}
+
+
 def write_units(cfg):
     UNITS.mkdir(parents=True, exist_ok=True)
     name = cfg["paper_name"]
@@ -186,7 +206,13 @@ def main():
 
     step("Extras")
     cfg["quote_of_the_day"] = yes("Quote of the day?", cfg.get("quote_of_the_day", True))
-    cfg["tip_of_the_day"] = yes("Developer tip of the day?", cfg.get("tip_of_the_day", True))
+    cfg["tip_of_the_day"] = yes("Tip of the day?", cfg.get("tip_of_the_day", True))
+    if cfg["tip_of_the_day"]:
+        mix = {"both": ["tech", "life"], "tech": ["tech"], "life": ["life"]}
+        now = next((k for k, v in mix.items() if v == cfg.get("tip_kinds", ["tech", "life"])), "both")
+        cfg["tip_kinds"] = mix[ask("Tips about tech (coding, AI), life (habits, money, health), or both",
+                                   now, lambda a: a in mix)]
+    cfg["weather"] = choose_weather(cfg.get("weather"))
 
     step("Printer")
     uri, ip, duplex = choose_printer(cfg)
@@ -199,6 +225,11 @@ def main():
                           lambda a: Path("/usr/share/zoneinfo", a).exists() or a == "UTC")
     cfg["print_time"] = ask("Time to make it every day (24h HH:MM)", cfg.get("print_time", "07:00"),
                             lambda a: re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", a) is not None)
+
+    step("Monitoring (optional)")
+    print(f"  {D}Paste an Uptime Kuma push URL or a healthchecks.io URL to be alerted if a paper fails.{X}")
+    hc = ask("Health check URL (or 'none')", cfg.get("healthcheck_url") or "none")
+    cfg["healthcheck_url"] = "" if hc.lower() == "none" else hc
 
     CONFIG.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
     print(f"\n{G}Saved {CONFIG.name}.{X} Edit it any time for finer control (feeds, keywords, story counts).")

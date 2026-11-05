@@ -1,55 +1,697 @@
 [
-  {"topic": "AI coding", "title": "Give the AI the failing test first", "tip": "Paste or point the assistant at a failing test before asking for a fix. A concrete pass/fail target beats a paragraph of description and stops it from 'fixing' the wrong thing."},
-  {"topic": "AI coding", "title": "Ask for a plan before code", "tip": "For anything bigger than one file, ask the AI to outline the files it will touch and why. Correcting a five-line plan is far cheaper than reviewing 300 lines of the wrong approach."},
-  {"topic": "AI coding", "title": "Keep a CLAUDE.md or rules file", "tip": "Write your project's conventions (package manager, test command, folder layout, do-nots) in a rules file the assistant reads every session. You stop repeating yourself and get consistent output."},
-  {"topic": "AI coding", "title": "Make the AI verify its own work", "tip": "End requests with 'run the type checker and tests, and show me the output'. Assistants that can run commands catch most of their own mistakes when you ask them to."},
-  {"topic": "AI coding", "title": "Small diffs, frequent commits", "tip": "Commit before every AI-driven change. If the result goes sideways, git restore is instant and you can retry with a better prompt instead of untangling a mess."},
-  {"topic": "AI coding", "title": "Feed it real examples", "tip": "Instead of describing your component style, point the AI at one existing component and say 'match this'. Examples transfer conventions better than rules."},
-  {"topic": "AI coding", "title": "Use AI to read, not just write", "tip": "Ask 'explain how data flows from this API route to this page' in an unfamiliar codebase. It's one of the highest-value, lowest-risk uses of an assistant."},
-  {"topic": "AI coding", "title": "Review AI code like a stranger's PR", "tip": "Check error handling, edge cases and anything touching auth or money line by line. AI code is fluent, which makes subtle bugs easier to miss."},
-  {"topic": "AI coding", "title": "Let AI write the boring tests", "tip": "Ask for table-driven tests covering edge cases (empty, null, unicode, huge input) for a pure function. Then delete the ones that test nothing meaningful."},
-  {"topic": "AI coding", "title": "Paste the whole error", "tip": "Give the full stack trace and the command you ran, not a summary. The file path and line in the trace are usually what the model needs most."},
-  {"topic": "Next.js", "title": "Default to Server Components", "tip": "In the App Router, components are server components unless you add 'use client'. Push 'use client' down to the smallest interactive leaf so less JavaScript ships to the browser."},
-  {"topic": "Next.js", "title": "Fetch in parallel", "tip": "In a server component, start independent requests together with Promise.all instead of awaiting one after another. Sequential awaits are a common cause of slow pages."},
-  {"topic": "Next.js", "title": "Stream slow parts with Suspense", "tip": "Wrap a slow section in <Suspense fallback={...}> so the rest of the page renders immediately. A loading.tsx file does this for a whole route segment."},
-  {"topic": "Next.js", "title": "Use next/image sizes", "tip": "Always set the sizes prop on responsive next/image elements. Without it the browser may download a much larger image than it displays."},
-  {"topic": "Next.js", "title": "Server Actions for simple mutations", "tip": "For form submits that just write data, a Server Action removes the need for a separate API route and works even before JavaScript loads."},
-  {"topic": "Next.js", "title": "Know your caching", "tip": "Check whether a fetch or route is cached before debugging 'stale data'. Read the caching docs for your Next.js version, since defaults changed between major versions."},
-  {"topic": "Next.js", "title": "next/font removes layout shift", "tip": "Load fonts with next/font. It self-hosts them and sets size-adjust fallbacks so text doesn't jump when the web font arrives."},
-  {"topic": "Next.js", "title": "generateMetadata for SEO", "tip": "Export generateMetadata from dynamic pages to build titles and Open Graph tags from the same data the page fetches. Requests are deduplicated."},
-  {"topic": "React", "title": "Derive, don't sync, state", "tip": "If a value can be computed from props or other state during render, compute it. Copying it into useState with a useEffect to keep it in sync is a bug factory."},
-  {"topic": "React", "title": "Keys reset components", "tip": "Changing a component's key remounts it with fresh state. It's the cleanest way to reset a form when the selected item changes."},
-  {"topic": "React", "title": "You might not need an effect", "tip": "Effects are for syncing with external systems. Handling a click, transforming data, or reacting to a prop change usually belongs in an event handler or render."},
-  {"topic": "React", "title": "useTransition for heavy updates", "tip": "Wrap a non-urgent state update (like filtering a big list) in startTransition so typing stays responsive while React renders the result."},
-  {"topic": "CSS", "title": "Container queries", "tip": "Use @container to style a card by its own width, not the viewport's. Components then adapt wherever you drop them in a layout."},
-  {"topic": "CSS", "title": ":has() is a parent selector", "tip": "form:has(input:invalid) or .card:has(img) lets you style a parent based on its children, with no JavaScript class toggling."},
-  {"topic": "CSS", "title": "clamp() for fluid type", "tip": "font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem) scales smoothly between a minimum and maximum without breakpoints."},
-  {"topic": "CSS", "title": "Use logical properties", "tip": "margin-inline and padding-block instead of left/right/top/bottom make layouts work automatically in right-to-left languages."},
-  {"topic": "CSS", "title": "aspect-ratio prevents jumps", "tip": "Set aspect-ratio on media containers so space is reserved before images or embeds load, which improves your CLS score."},
-  {"topic": "TypeScript", "title": "satisfies keeps literal types", "tip": "const config = {...} satisfies Config checks the shape but keeps the narrow literal types, so you get both validation and precise autocomplete."},
-  {"topic": "TypeScript", "title": "Discriminated unions for state", "tip": "Model state as { status: 'loading' } | { status: 'error', error } | { status: 'ok', data }. Impossible states become unrepresentable."},
-  {"topic": "TypeScript", "title": "Validate at the boundary", "tip": "Types vanish at runtime. Parse API responses and form data with a schema library such as Zod, then trust the types inside your app."},
-  {"topic": "TypeScript", "title": "Exhaustive switch checks", "tip": "In a switch's default branch assign the value to a variable of type never. Adding a new union member then becomes a compile error until you handle it."},
-  {"topic": "JavaScript", "title": "structuredClone for deep copies", "tip": "structuredClone(obj) deep-copies objects, including Dates, Maps and Sets. Skip JSON.parse(JSON.stringify()) and its lost types."},
-  {"topic": "JavaScript", "title": "AbortController for fetch", "tip": "Pass an AbortController signal to fetch and abort it when a component unmounts or a newer search starts, which avoids race conditions."},
-  {"topic": "JavaScript", "title": "Array.prototype.at", "tip": "arr.at(-1) gets the last element. Cleaner than arr[arr.length - 1]."},
-  {"topic": "JavaScript", "title": "Object.groupBy", "tip": "Object.groupBy(items, i => i.category) groups an array in one line. It's supported in modern browsers and Node 21+."},
-  {"topic": "Performance", "title": "Measure INP, not just load", "tip": "Interaction to Next Paint is a Core Web Vital. Use the Performance panel to find long tasks after clicks and split them up, or defer the work."},
-  {"topic": "Performance", "title": "Preload the LCP image", "tip": "Find your Largest Contentful Paint element in Lighthouse. If it's an image, give it priority loading (fetchpriority=high, or priority on next/image)."},
-  {"topic": "Performance", "title": "Check your bundle", "tip": "Run a bundle analyzer once a month. One accidentally client-side date or chart library can add hundreds of kilobytes."},
-  {"topic": "Accessibility", "title": "Buttons are buttons", "tip": "Use <button> for actions and <a> for navigation. A div with onClick misses keyboard support, focus and screen-reader semantics."},
-  {"topic": "Accessibility", "title": "Test with only a keyboard", "tip": "Tab through your page once a week. If you can't see where focus is, or can't reach something, neither can many of your users."},
-  {"topic": "AEM", "title": "Content Fragments + GraphQL for headless", "tip": "Model structured content as Content Fragment Models and query them with AEM's GraphQL API. Use persisted queries so responses are cacheable at the CDN."},
-  {"topic": "AEM", "title": "Persisted queries over ad-hoc ones", "tip": "Persisted GraphQL queries are fetched with GET and cached by Dispatcher and the CDN. Ad-hoc POST queries bypass that cache and hit publish every time."},
-  {"topic": "AEM", "title": "Universal Editor instrumentation", "tip": "The Universal Editor finds editable content through data-aue-* attributes in your markup. Instrument your Next.js components once and authors can edit in context."},
-  {"topic": "AEM", "title": "Edge Delivery Services blocks", "tip": "In EDS, each block is a folder with block.js and block.css. Keep blocks small and decorate the authored table markup rather than fighting it."},
-  {"topic": "AEM", "title": "Use the AEM headless SDK", "tip": "@adobe/aem-headless-client-js handles auth and persisted-query calls for you, which beats hand-rolling fetch wrappers around the GraphQL endpoint."},
-  {"topic": "AEP", "title": "Schemas first in Experience Platform", "tip": "In AEP, design XDM schemas and field groups before ingesting data. Changing a schema after profiles are enabled is far more painful."},
-  {"topic": "Git", "title": "git switch -", "tip": "Like cd -, git switch - jumps back to the previous branch. Handy when bouncing between a feature branch and main."},
-  {"topic": "Git", "title": "Rebase with autosquash", "tip": "Commit fixes with git commit --fixup <sha>, then git rebase -i --autosquash main folds them into the right commits automatically."},
-  {"topic": "Git", "title": "git bisect finds regressions", "tip": "git bisect start, mark a good and a bad commit, and Git binary-searches the history. Add 'git bisect run npm test' to automate it."},
-  {"topic": "DevTools", "title": "Copy as fetch", "tip": "In the Network panel, right-click a request and choose Copy as fetch (or cURL) to replay an API call exactly, headers and all."},
-  {"topic": "DevTools", "title": "Local overrides", "tip": "Chrome DevTools > Sources > Overrides lets you edit a production file or response locally and reload, which is great for testing a fix before deploying."},
-  {"topic": "Career", "title": "Write it down", "tip": "Keep a weekly 'brag doc' of what you shipped and learned. It makes reviews, résumés and interviews dramatically easier."},
-  {"topic": "Career", "title": "Read one PR you didn't write", "tip": "Review or read one PR outside your area each day. It's the cheapest way to learn the rest of the codebase and other people's patterns."}
+ {
+  "topic": "AI coding",
+  "title": "Give the AI the failing test first",
+  "tip": "Paste or point the assistant at a failing test before asking for a fix. A concrete pass/fail target beats a paragraph of description and stops it from 'fixing' the wrong thing.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Ask for a plan before code",
+  "tip": "For anything bigger than one file, ask the AI to outline the files it will touch and why. Correcting a five-line plan is far cheaper than reviewing 300 lines of the wrong approach.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Keep a CLAUDE.md or rules file",
+  "tip": "Write your project's conventions (package manager, test command, folder layout, do-nots) in a rules file the assistant reads every session. You stop repeating yourself and get consistent output.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Make the AI verify its own work",
+  "tip": "End requests with 'run the type checker and tests, and show me the output'. Assistants that can run commands catch most of their own mistakes when you ask them to.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Small diffs, frequent commits",
+  "tip": "Commit before every AI-driven change. If the result goes sideways, git restore is instant and you can retry with a better prompt instead of untangling a mess.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Feed it real examples",
+  "tip": "Instead of describing your component style, point the AI at one existing component and say 'match this'. Examples transfer conventions better than rules.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Use AI to read, not just write",
+  "tip": "Ask 'explain how data flows from this API route to this page' in an unfamiliar codebase. It's one of the highest-value, lowest-risk uses of an assistant.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Review AI code like a stranger's PR",
+  "tip": "Check error handling, edge cases and anything touching auth or money line by line. AI code is fluent, which makes subtle bugs easier to miss.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Let AI write the boring tests",
+  "tip": "Ask for table-driven tests covering edge cases (empty, null, unicode, huge input) for a pure function. Then delete the ones that test nothing meaningful.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AI coding",
+  "title": "Paste the whole error",
+  "tip": "Give the full stack trace and the command you ran, not a summary. The file path and line in the trace are usually what the model needs most.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Default to Server Components",
+  "tip": "In the App Router, components are server components unless you add 'use client'. Push 'use client' down to the smallest interactive leaf so less JavaScript ships to the browser.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Fetch in parallel",
+  "tip": "In a server component, start independent requests together with Promise.all instead of awaiting one after another. Sequential awaits are a common cause of slow pages.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Stream slow parts with Suspense",
+  "tip": "Wrap a slow section in <Suspense fallback={...}> so the rest of the page renders immediately. A loading.tsx file does this for a whole route segment.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Use next/image sizes",
+  "tip": "Always set the sizes prop on responsive next/image elements. Without it the browser may download a much larger image than it displays.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Server Actions for simple mutations",
+  "tip": "For form submits that just write data, a Server Action removes the need for a separate API route and works even before JavaScript loads.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "Know your caching",
+  "tip": "Check whether a fetch or route is cached before debugging 'stale data'. Read the caching docs for your Next.js version, since defaults changed between major versions.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "next/font removes layout shift",
+  "tip": "Load fonts with next/font. It self-hosts them and sets size-adjust fallbacks so text doesn't jump when the web font arrives.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Next.js",
+  "title": "generateMetadata for SEO",
+  "tip": "Export generateMetadata from dynamic pages to build titles and Open Graph tags from the same data the page fetches. Requests are deduplicated.",
+  "kind": "tech"
+ },
+ {
+  "topic": "React",
+  "title": "Derive, don't sync, state",
+  "tip": "If a value can be computed from props or other state during render, compute it. Copying it into useState with a useEffect to keep it in sync is a bug factory.",
+  "kind": "tech"
+ },
+ {
+  "topic": "React",
+  "title": "Keys reset components",
+  "tip": "Changing a component's key remounts it with fresh state. It's the cleanest way to reset a form when the selected item changes.",
+  "kind": "tech"
+ },
+ {
+  "topic": "React",
+  "title": "You might not need an effect",
+  "tip": "Effects are for syncing with external systems. Handling a click, transforming data, or reacting to a prop change usually belongs in an event handler or render.",
+  "kind": "tech"
+ },
+ {
+  "topic": "React",
+  "title": "useTransition for heavy updates",
+  "tip": "Wrap a non-urgent state update (like filtering a big list) in startTransition so typing stays responsive while React renders the result.",
+  "kind": "tech"
+ },
+ {
+  "topic": "CSS",
+  "title": "Container queries",
+  "tip": "Use @container to style a card by its own width, not the viewport's. Components then adapt wherever you drop them in a layout.",
+  "kind": "tech"
+ },
+ {
+  "topic": "CSS",
+  "title": ":has() is a parent selector",
+  "tip": "form:has(input:invalid) or .card:has(img) lets you style a parent based on its children, with no JavaScript class toggling.",
+  "kind": "tech"
+ },
+ {
+  "topic": "CSS",
+  "title": "clamp() for fluid type",
+  "tip": "font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem) scales smoothly between a minimum and maximum without breakpoints.",
+  "kind": "tech"
+ },
+ {
+  "topic": "CSS",
+  "title": "Use logical properties",
+  "tip": "margin-inline and padding-block instead of left/right/top/bottom make layouts work automatically in right-to-left languages.",
+  "kind": "tech"
+ },
+ {
+  "topic": "CSS",
+  "title": "aspect-ratio prevents jumps",
+  "tip": "Set aspect-ratio on media containers so space is reserved before images or embeds load, which improves your CLS score.",
+  "kind": "tech"
+ },
+ {
+  "topic": "TypeScript",
+  "title": "satisfies keeps literal types",
+  "tip": "const config = {...} satisfies Config checks the shape but keeps the narrow literal types, so you get both validation and precise autocomplete.",
+  "kind": "tech"
+ },
+ {
+  "topic": "TypeScript",
+  "title": "Discriminated unions for state",
+  "tip": "Model state as { status: 'loading' } | { status: 'error', error } | { status: 'ok', data }. Impossible states become unrepresentable.",
+  "kind": "tech"
+ },
+ {
+  "topic": "TypeScript",
+  "title": "Validate at the boundary",
+  "tip": "Types vanish at runtime. Parse API responses and form data with a schema library such as Zod, then trust the types inside your app.",
+  "kind": "tech"
+ },
+ {
+  "topic": "TypeScript",
+  "title": "Exhaustive switch checks",
+  "tip": "In a switch's default branch assign the value to a variable of type never. Adding a new union member then becomes a compile error until you handle it.",
+  "kind": "tech"
+ },
+ {
+  "topic": "JavaScript",
+  "title": "structuredClone for deep copies",
+  "tip": "structuredClone(obj) deep-copies objects, including Dates, Maps and Sets. Skip JSON.parse(JSON.stringify()) and its lost types.",
+  "kind": "tech"
+ },
+ {
+  "topic": "JavaScript",
+  "title": "AbortController for fetch",
+  "tip": "Pass an AbortController signal to fetch and abort it when a component unmounts or a newer search starts, which avoids race conditions.",
+  "kind": "tech"
+ },
+ {
+  "topic": "JavaScript",
+  "title": "Array.prototype.at",
+  "tip": "arr.at(-1) gets the last element. Cleaner than arr[arr.length - 1].",
+  "kind": "tech"
+ },
+ {
+  "topic": "JavaScript",
+  "title": "Object.groupBy",
+  "tip": "Object.groupBy(items, i => i.category) groups an array in one line. It's supported in modern browsers and Node 21+.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Performance",
+  "title": "Measure INP, not just load",
+  "tip": "Interaction to Next Paint is a Core Web Vital. Use the Performance panel to find long tasks after clicks and split them up, or defer the work.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Performance",
+  "title": "Preload the LCP image",
+  "tip": "Find your Largest Contentful Paint element in Lighthouse. If it's an image, give it priority loading (fetchpriority=high, or priority on next/image).",
+  "kind": "tech"
+ },
+ {
+  "topic": "Performance",
+  "title": "Check your bundle",
+  "tip": "Run a bundle analyzer once a month. One accidentally client-side date or chart library can add hundreds of kilobytes.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Accessibility",
+  "title": "Buttons are buttons",
+  "tip": "Use <button> for actions and <a> for navigation. A div with onClick misses keyboard support, focus and screen-reader semantics.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Accessibility",
+  "title": "Test with only a keyboard",
+  "tip": "Tab through your page once a week. If you can't see where focus is, or can't reach something, neither can many of your users.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEM",
+  "title": "Content Fragments + GraphQL for headless",
+  "tip": "Model structured content as Content Fragment Models and query them with AEM's GraphQL API. Use persisted queries so responses are cacheable at the CDN.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEM",
+  "title": "Persisted queries over ad-hoc ones",
+  "tip": "Persisted GraphQL queries are fetched with GET and cached by Dispatcher and the CDN. Ad-hoc POST queries bypass that cache and hit publish every time.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEM",
+  "title": "Universal Editor instrumentation",
+  "tip": "The Universal Editor finds editable content through data-aue-* attributes in your markup. Instrument your Next.js components once and authors can edit in context.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEM",
+  "title": "Edge Delivery Services blocks",
+  "tip": "In EDS, each block is a folder with block.js and block.css. Keep blocks small and decorate the authored table markup rather than fighting it.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEM",
+  "title": "Use the AEM headless SDK",
+  "tip": "@adobe/aem-headless-client-js handles auth and persisted-query calls for you, which beats hand-rolling fetch wrappers around the GraphQL endpoint.",
+  "kind": "tech"
+ },
+ {
+  "topic": "AEP",
+  "title": "Schemas first in Experience Platform",
+  "tip": "In AEP, design XDM schemas and field groups before ingesting data. Changing a schema after profiles are enabled is far more painful.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Git",
+  "title": "git switch -",
+  "tip": "Like cd -, git switch - jumps back to the previous branch. Handy when bouncing between a feature branch and main.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Git",
+  "title": "Rebase with autosquash",
+  "tip": "Commit fixes with git commit --fixup <sha>, then git rebase -i --autosquash main folds them into the right commits automatically.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Git",
+  "title": "git bisect finds regressions",
+  "tip": "git bisect start, mark a good and a bad commit, and Git binary-searches the history. Add 'git bisect run npm test' to automate it.",
+  "kind": "tech"
+ },
+ {
+  "topic": "DevTools",
+  "title": "Copy as fetch",
+  "tip": "In the Network panel, right-click a request and choose Copy as fetch (or cURL) to replay an API call exactly, headers and all.",
+  "kind": "tech"
+ },
+ {
+  "topic": "DevTools",
+  "title": "Local overrides",
+  "tip": "Chrome DevTools > Sources > Overrides lets you edit a production file or response locally and reload, which is great for testing a fix before deploying.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Career",
+  "title": "Write it down",
+  "tip": "Keep a weekly 'brag doc' of what you shipped and learned. It makes reviews, résumés and interviews dramatically easier.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Career",
+  "title": "Read one PR you didn't write",
+  "tip": "Review or read one PR outside your area each day. It's the cheapest way to learn the rest of the codebase and other people's patterns.",
+  "kind": "tech"
+ },
+ {
+  "topic": "Habits",
+  "title": "Two-minute rule",
+  "tip": "If something takes less than two minutes (replying, filing, rinsing a mug), do it now. Small tasks pile up into the mental clutter that makes big ones feel heavier.",
+  "kind": "life"
+ },
+ {
+  "topic": "Habits",
+  "title": "Lay it out the night before",
+  "tip": "Put tomorrow's clothes, bag and keys in one spot tonight. You remove a dozen tiny decisions from the busiest part of your morning.",
+  "kind": "life"
+ },
+ {
+  "topic": "Habits",
+  "title": "Stack a new habit",
+  "tip": "Attach a habit you want to an existing one: 'after I pour my coffee, I stretch for one minute'. The old routine becomes the reminder.",
+  "kind": "life"
+ },
+ {
+  "topic": "Habits",
+  "title": "Shrink it until it's easy",
+  "tip": "Want to read more? Commit to one page a night. A habit that's too small to skip survives bad days and grows on good ones.",
+  "kind": "life"
+ },
+ {
+  "topic": "Productivity",
+  "title": "Eat the frog",
+  "tip": "Do your most dreaded task first thing. The rest of the day feels lighter, and you stop spending energy avoiding it.",
+  "kind": "life"
+ },
+ {
+  "topic": "Productivity",
+  "title": "Write tomorrow's top three",
+  "tip": "Before you stop work, write the three things that would make tomorrow a win. You'll start the morning with direction instead of an inbox.",
+  "kind": "life"
+ },
+ {
+  "topic": "Productivity",
+  "title": "Batch your errands",
+  "tip": "Group similar jobs (calls, errands, emails) into one block. Switching between kinds of work costs more time than it seems.",
+  "kind": "life"
+ },
+ {
+  "topic": "Productivity",
+  "title": "Turn off non-human notifications",
+  "tip": "Disable alerts from apps that aren't a real person messaging you. Check them on your schedule, not theirs.",
+  "kind": "life"
+ },
+ {
+  "topic": "Productivity",
+  "title": "Use a 'done' list",
+  "tip": "At the end of the day, jot what you actually finished. It's motivating, and it makes weekly reviews and status updates effortless.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "Pay yourself first",
+  "tip": "Set an automatic transfer to savings the day your pay arrives. Saving what's left at month-end rarely works; saving first does.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "The 48-hour rule",
+  "tip": "For any non-essential purchase over a set amount, wait 48 hours. If you still want it after two days, buy it without guilt.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "Audit your subscriptions",
+  "tip": "Scroll your last two card statements for recurring charges. Most people find at least one service they forgot they pay for.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "Price per use",
+  "tip": "A $120 pair of shoes worn 300 times costs 40 cents a wear. Thinking per use helps you spend on what you actually use.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "Build a small buffer",
+  "tip": "Keep one month of expenses as an emergency buffer before investing extra money. It turns surprises into inconveniences, not crises.",
+  "kind": "life"
+ },
+ {
+  "topic": "Money",
+  "title": "Check your credit report yearly",
+  "tip": "Look at your credit report once a year for accounts you don't recognize. It's free and catches identity theft early.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Get daylight early",
+  "tip": "Ten minutes of outdoor light within an hour of waking helps set your body clock, so falling asleep at night gets easier.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "The 20-20-20 rule",
+  "tip": "Every 20 minutes of screen time, look at something 20 feet away for 20 seconds. Your eyes will thank you by evening.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Walk after meals",
+  "tip": "A 10-minute walk after a meal helps with digestion and evens out energy dips. It's also an easy way to add daily steps.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Keep a water bottle in sight",
+  "tip": "You drink more when water is visible and within reach. Put a bottle on your desk instead of relying on remembering.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Same wake-up time, every day",
+  "tip": "A consistent wake time, even on weekends, does more for your sleep than an early bedtime you can't keep.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Stand up every hour",
+  "tip": "Set a gentle hourly reminder to stand, stretch or refill water. Breaking up long sitting matters even if you exercise.",
+  "kind": "life"
+ },
+ {
+  "topic": "Health",
+  "title": "Screens off before bed",
+  "tip": "Put your phone away 30 minutes before bed and charge it outside the bedroom if you can. You'll fall asleep faster.",
+  "kind": "life"
+ },
+ {
+  "topic": "Mind",
+  "title": "Name the feeling",
+  "tip": "When stressed, say what you feel in a word or two: 'frustrated', 'anxious'. Naming an emotion takes some of the edge off it.",
+  "kind": "life"
+ },
+ {
+  "topic": "Mind",
+  "title": "Box breathing",
+  "tip": "Breathe in for 4, hold for 4, out for 4, hold for 4. Repeat four times. It calms you down quickly before a meeting or a hard conversation.",
+  "kind": "life"
+ },
+ {
+  "topic": "Mind",
+  "title": "Worry window",
+  "tip": "Give worries a 15-minute slot later in the day. When one pops up early, write it down for the window. Most shrink by then.",
+  "kind": "life"
+ },
+ {
+  "topic": "Mind",
+  "title": "Three good things",
+  "tip": "Before sleep, write three things that went well today and why. It's a small, well-studied way to feel more positive over time.",
+  "kind": "life"
+ },
+ {
+  "topic": "Mind",
+  "title": "Single-task one meal",
+  "tip": "Eat one meal today without a screen. You'll notice the food, feel fuller, and give your brain a real break.",
+  "kind": "life"
+ },
+ {
+  "topic": "Relationships",
+  "title": "Send the message now",
+  "tip": "Thinking of someone? Text them right now. 'Saw this and thought of you' keeps friendships alive with almost no effort.",
+  "kind": "life"
+ },
+ {
+  "topic": "Relationships",
+  "title": "Remember the follow-up",
+  "tip": "When someone shares news (an interview, a doctor visit), note it and ask them about it later. It shows you were really listening.",
+  "kind": "life"
+ },
+ {
+  "topic": "Relationships",
+  "title": "Listen to understand",
+  "tip": "In your next conversation, ask one more question before giving advice. People often want to be heard more than fixed.",
+  "kind": "life"
+ },
+ {
+  "topic": "Relationships",
+  "title": "Call your parents",
+  "tip": "A five-minute call to a parent or grandparent means more to them than you think. Put a weekly reminder on your calendar.",
+  "kind": "life"
+ },
+ {
+  "topic": "Home",
+  "title": "One in, one out",
+  "tip": "When you bring something new home (a shirt, a mug), let one similar item go. Clutter stops growing without big purges.",
+  "kind": "life"
+ },
+ {
+  "topic": "Home",
+  "title": "The 10-minute reset",
+  "tip": "Set a 10-minute timer each evening and tidy the main room. Waking up to a clear space makes mornings calmer.",
+  "kind": "life"
+ },
+ {
+  "topic": "Home",
+  "title": "Clean as you cook",
+  "tip": "Wash bowls and tools while things simmer. By the time you eat, most of the cleanup is done.",
+  "kind": "life"
+ },
+ {
+  "topic": "Home",
+  "title": "Test your smoke alarms",
+  "tip": "Press the test button on every smoke and CO alarm once a month, and replace batteries yearly. It takes two minutes and saves lives.",
+  "kind": "life"
+ },
+ {
+  "topic": "Home",
+  "title": "Photograph your stuff",
+  "tip": "Walk through your home recording a quick video of your belongings. If you ever need an insurance claim, you'll have proof.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Take a photo of where you parked",
+  "tip": "Snap a photo of the parking level or nearest sign. It's faster than wandering a garage later.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Keep a 'brain dump' note",
+  "tip": "Keep one note on your phone for every stray thought, idea or to-do. Empty it into your real lists once a day.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Save frequent replies",
+  "tip": "Use your phone's text replacement for your address, email and common replies. A few keystrokes become whole sentences.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Write down where things live",
+  "tip": "Note where you keep spare keys, documents and warranties. Future you, or your family in an emergency, will find them fast.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Back up your phone photos",
+  "tip": "Turn on automatic photo backup today. Phones get lost and break; memories shouldn't go with them.",
+  "kind": "life"
+ },
+ {
+  "topic": "Learning",
+  "title": "Teach it to learn it",
+  "tip": "Explain something you just learned to someone else, or out loud. Gaps in your understanding show up immediately.",
+  "kind": "life"
+ },
+ {
+  "topic": "Learning",
+  "title": "Read before scrolling",
+  "tip": "Read a few pages of a book before opening social media in the morning. Your attention is sharpest early; spend it well.",
+  "kind": "life"
+ },
+ {
+  "topic": "Learning",
+  "title": "Learn one new word",
+  "tip": "Look up the next word you don't know instead of guessing. Use it twice today and it'll stick.",
+  "kind": "life"
+ },
+ {
+  "topic": "Life hack",
+  "title": "Charge before sunset",
+  "tip": "Plug in your phone, power bank and earbuds before evening plans. A dead phone at night is a bigger problem than at noon.",
+  "kind": "life"
+ },
+ {
+  "topic": "Season",
+  "title": "Do outdoor errands before sunset",
+  "tip": "Days are short this time of year. Plan walks, errands and anything outdoors before the early sunset to get daylight and stay safe.",
+  "kind": "life",
+  "months": [
+   11,
+   12,
+   1,
+   2
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Winter car kit",
+  "tip": "Keep a blanket, scraper, small shovel, gloves and a phone charger in the car. Being stuck in the cold for an hour is far worse without them.",
+  "kind": "life",
+  "months": [
+   11,
+   12,
+   1,
+   2
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Check your tires",
+  "tip": "Cold weather lowers tire pressure. Check it monthly in winter, and switch to winter tires before the first snow if you drive.",
+  "kind": "life",
+  "months": [
+   10,
+   11,
+   12
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Vitamin D in dark months",
+  "tip": "With little sunlight in winter, many people run low on vitamin D. Ask your doctor whether a supplement makes sense for you.",
+  "kind": "life",
+  "months": [
+   11,
+   12,
+   1,
+   2,
+   3
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Reverse your ceiling fan",
+  "tip": "Set ceiling fans to spin clockwise on low in winter. It pushes warm air down from the ceiling, so you can lower the thermostat.",
+  "kind": "life",
+  "months": [
+   11,
+   12,
+   1,
+   2
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Spring clean one drawer a day",
+  "tip": "Instead of a weekend-long purge, clear one drawer or shelf per day this month. It's painless, and the house is done by month-end.",
+  "kind": "life",
+  "months": [
+   3,
+   4,
+   5
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Sunscreen isn't just for beaches",
+  "tip": "UV is strong from spring to fall even on cloudy days. Put sunscreen on your face and neck in the morning routine.",
+  "kind": "life",
+  "months": [
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Hydrate ahead of the heat",
+  "tip": "On hot days, start drinking water in the morning rather than waiting until you're thirsty in the afternoon.",
+  "kind": "life",
+  "months": [
+   6,
+   7,
+   8
+  ]
+ },
+ {
+  "topic": "Season",
+  "title": "Check your furnace filter",
+  "tip": "Change or clean your furnace filter before heating season. A clogged filter wastes energy and dries out the air.",
+  "kind": "life",
+  "months": [
+   9,
+   10,
+   11
+  ]
+ }
 ]
