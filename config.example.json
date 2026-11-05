@@ -1,0 +1,88 @@
+{
+  "paper_name": "The Daily Times",
+  "tagline": "All the news that fits your interests",
+  "timezone": "UTC",
+  "print_time": "07:00",
+  "print": false,
+  "printer": "",
+  "printer_fallback_ip": "",
+  "two_sided": true,
+  "max_age_hours": 36,
+  "summary_words": 38,
+  "keep_editions": 14,
+  "no_repeat_days": 7,
+  "shorten_links": false,
+  "quote_of_the_day": true,
+  "tip_of_the_day": true,
+  "boost_keywords": [
+    "AI"
+  ],
+  "exclude_keywords": [
+    "deal of the day",
+    "coupon",
+    "sponsored",
+    "best deals",
+    "horoscope",
+    "IPO",
+    "stock",
+    "shares"
+  ],
+  "sections": [
+    {
+      "name": "World & Politics",
+      "stories": 5,
+      "feeds": [
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://feeds.npr.org/1004/rss.xml",
+        "https://www.theguardian.com/world/rss",
+        "https://www.aljazeera.com/xml/rss/all.xml"
+      ]
+    },
+    {
+      "name": "Tech",
+      "stories": 4,
+      "feeds": [
+        "https://www.theverge.com/rss/index.xml",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://techcrunch.com/feed/",
+        "https://www.wired.com/feed/rss"
+      ]
+    },
+    {
+      "name": "AI for Developers: What's New",
+      "stories": 6,
+      "max_age_hours": 48,
+      "boost_keywords": [
+        "Claude",
+        "Claude Code",
+        "agent",
+        "agents",
+        "coding",
+        "developer",
+        "developers",
+        "MCP",
+        "Cursor",
+        "Copilot",
+        "model",
+        "release",
+        "API"
+      ],
+      "feeds": [
+        "https://simonwillison.net/atom/everything/",
+        "https://hnrss.org/frontpage?q=AI+OR+LLM+OR+Claude+OR+GPT+OR+agents",
+        "https://openai.com/news/rss.xml",
+        "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+      ]
+    },
+    {
+      "name": "Science",
+      "stories": 4,
+      "max_age_hours": 72,
+      "feeds": [
+        "https://www.sciencedaily.com/rss/top/science.xml",
+        "https://feeds.npr.org/1007/rss.xml",
+        "https://www.theguardian.com/science/rss"
+      ]
+    }
+  ]
+}

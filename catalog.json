@@ -1,0 +1,395 @@
+[
+  {
+    "id": "world",
+    "description": "World news (BBC, NPR, Guardian, Al Jazeera)",
+    "section": {
+      "name": "World & Politics",
+      "stories": 5,
+      "feeds": [
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://feeds.npr.org/1004/rss.xml",
+        "https://www.theguardian.com/world/rss",
+        "https://www.aljazeera.com/xml/rss/all.xml"
+      ]
+    }
+  },
+  {
+    "id": "us",
+    "description": "United States (NPR, NYT)",
+    "section": {
+      "name": "United States",
+      "stories": 5,
+      "feeds": [
+        "https://feeds.npr.org/1003/rss.xml",
+        "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"
+      ]
+    }
+  },
+  {
+    "id": "canada",
+    "description": "Canada (Global News, Toronto Star)",
+    "section": {
+      "name": "Canada",
+      "stories": 5,
+      "boost_keywords": [
+        "Ontario",
+        "federal",
+        "Carney",
+        "Ottawa"
+      ],
+      "feeds": [
+        "https://globalnews.ca/canada/feed/",
+        "https://www.thestar.com/search/?f=rss&t=article&c=news/canada*&l=50&s=start_time&sd=desc"
+      ]
+    }
+  },
+  {
+    "id": "uk",
+    "description": "United Kingdom (BBC, Guardian)",
+    "section": {
+      "name": "United Kingdom",
+      "stories": 5,
+      "feeds": [
+        "https://feeds.bbci.co.uk/news/uk/rss.xml",
+        "https://www.theguardian.com/uk-news/rss"
+      ]
+    }
+  },
+  {
+    "id": "india",
+    "description": "India (The Hindu, NDTV, Indian Express, TOI)",
+    "section": {
+      "name": "India",
+      "stories": 5,
+      "feeds": [
+        "https://www.thehindu.com/news/national/feeder/default.rss",
+        "https://feeds.feedburner.com/ndtvnews-india-news",
+        "https://indianexpress.com/section/india/feed/",
+        "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms"
+      ]
+    }
+  },
+  {
+    "id": "australia",
+    "description": "Australia (ABC, Guardian)",
+    "section": {
+      "name": "Australia",
+      "stories": 5,
+      "feeds": [
+        "https://www.abc.net.au/news/feed/2942460/rss.xml",
+        "https://www.theguardian.com/australia-news/rss"
+      ]
+    }
+  },
+  {
+    "id": "europe",
+    "description": "Europe (BBC, Guardian)",
+    "section": {
+      "name": "Europe",
+      "stories": 4,
+      "feeds": [
+        "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+        "https://www.theguardian.com/world/europe-news/rss"
+      ]
+    }
+  },
+  {
+    "id": "toronto",
+    "description": "Toronto & Mississauga local",
+    "section": {
+      "name": "Toronto & Mississauga",
+      "stories": 5,
+      "boost_keywords": [
+        "Mississauga",
+        "Peel",
+        "Brampton",
+        "TTC",
+        "GO Transit",
+        "Hurontario"
+      ],
+      "feeds": [
+        "https://www.insauga.com/feed/",
+        "https://globalnews.ca/toronto/feed/",
+        "https://www.thestar.com/search/?f=rss&t=article&c=news/gta*&l=50&s=start_time&sd=desc"
+      ]
+    }
+  },
+  {
+    "id": "delhi",
+    "description": "Delhi & Gurugram local",
+    "section": {
+      "name": "Delhi & Gurugram",
+      "stories": 4,
+      "boost_keywords": [
+        "Gurugram",
+        "Gurgaon",
+        "Haryana",
+        "NCR"
+      ],
+      "feeds": [
+        "https://www.hindustantimes.com/feeds/rss/cities/gurugram-news/rssfeed.xml",
+        "https://timesofindia.indiatimes.com/rssfeeds/6547154.cms",
+        "https://www.thehindu.com/news/cities/Delhi/feeder/default.rss",
+        "https://www.hindustantimes.com/feeds/rss/cities/delhi-news/rssfeed.xml"
+      ]
+    }
+  },
+  {
+    "id": "canada-immigration",
+    "description": "Canada immigration & PR (CIC News, IRCC)",
+    "section": {
+      "name": "Immigration & PR",
+      "stories": 4,
+      "max_age_hours": 96,
+      "boost_keywords": [
+        "Express Entry",
+        "CRS",
+        "draw",
+        "permanent residence",
+        "PR",
+        "work permit",
+        "PGWP",
+        "Canadian Experience Class",
+        "PNP",
+        "OINP"
+      ],
+      "feeds": [
+        "https://www.cicnews.com/feed",
+        "https://api.io.canada.ca/io-server/gc/news/en/v2?dept=departmentofcitizenshipandimmigration&type=newsreleases&sort=publishedDate&orderBy=desc&pick=20&format=atom"
+      ]
+    }
+  },
+  {
+    "id": "business",
+    "description": "Business & economy (BBC, NPR, Guardian)",
+    "section": {
+      "name": "Business",
+      "stories": 4,
+      "feeds": [
+        "https://feeds.bbci.co.uk/news/business/rss.xml",
+        "https://feeds.npr.org/1006/rss.xml",
+        "https://www.theguardian.com/business/rss"
+      ]
+    }
+  },
+  {
+    "id": "tech",
+    "description": "Tech (Verge, Ars Technica, TechCrunch, Wired)",
+    "section": {
+      "name": "Tech",
+      "stories": 4,
+      "feeds": [
+        "https://www.theverge.com/rss/index.xml",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://techcrunch.com/feed/",
+        "https://www.wired.com/feed/rss"
+      ]
+    }
+  },
+  {
+    "id": "ai-dev",
+    "description": "AI for developers: new models, tools, agents",
+    "section": {
+      "name": "AI for Developers: What's New",
+      "stories": 6,
+      "max_age_hours": 48,
+      "boost_keywords": [
+        "Claude",
+        "Claude Code",
+        "agent",
+        "agents",
+        "coding",
+        "developer",
+        "developers",
+        "MCP",
+        "Cursor",
+        "Copilot",
+        "model",
+        "release",
+        "API"
+      ],
+      "feeds": [
+        "https://simonwillison.net/atom/everything/",
+        "https://hnrss.org/frontpage?q=AI+OR+LLM+OR+Claude+OR+GPT+OR+agents",
+        "https://openai.com/news/rss.xml",
+        "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+      ]
+    }
+  },
+  {
+    "id": "ai-solved",
+    "description": "Problems AI solved (research news)",
+    "section": {
+      "name": "Problems AI Solved",
+      "stories": 3,
+      "max_age_hours": 168,
+      "feeds": [
+        "https://www.sciencedaily.com/rss/computers_math/artificial_intelligence.xml",
+        "https://news.mit.edu/rss/topic/artificial-intelligence2"
+      ]
+    }
+  },
+  {
+    "id": "programming",
+    "description": "Programming (Hacker News front page, Lobsters)",
+    "section": {
+      "name": "Programming",
+      "stories": 4,
+      "max_age_hours": 48,
+      "feeds": [
+        "https://hnrss.org/frontpage?points=150",
+        "https://lobste.rs/rss"
+      ]
+    }
+  },
+  {
+    "id": "frontend",
+    "description": "Frontend, React & Next.js",
+    "section": {
+      "name": "Frontend & Next.js",
+      "stories": 4,
+      "max_age_hours": 240,
+      "boost_keywords": [
+        "Next.js",
+        "React",
+        "CSS",
+        "TypeScript",
+        "performance",
+        "Server Components",
+        "App Router"
+      ],
+      "feeds": [
+        "https://nextjs.org/feed.xml",
+        "https://vercel.com/atom",
+        "https://www.smashingmagazine.com/feed/",
+        "https://dev.to/feed/tag/nextjs",
+        "https://hnrss.org/frontpage?q=React+OR+Next.js+OR+CSS+OR+JavaScript+OR+TypeScript+OR+frontend"
+      ]
+    }
+  },
+  {
+    "id": "aem",
+    "description": "Adobe AEM & AEP (headless, Edge Delivery)",
+    "section": {
+      "name": "Adobe AEM & AEP",
+      "stories": 3,
+      "max_age_hours": 504,
+      "boost_keywords": [
+        "headless",
+        "Universal Editor",
+        "Edge Delivery",
+        "Content Fragment",
+        "GraphQL",
+        "AEP",
+        "Experience Platform"
+      ],
+      "feeds": [
+        "https://dev.to/feed/tag/aem",
+        "https://medium.com/feed/tag/adobe-experience-manager",
+        "https://medium.com/feed/tag/aem"
+      ],
+      "require_keywords": [
+        "AEM",
+        "Adobe",
+        "Experience Manager",
+        "Experience Platform",
+        "Edge Delivery",
+        "EDS",
+        "Universal Editor",
+        "Content Fragment"
+      ]
+    }
+  },
+  {
+    "id": "security",
+    "description": "Cybersecurity (Krebs, BleepingComputer, The Hacker News)",
+    "section": {
+      "name": "Security",
+      "stories": 4,
+      "max_age_hours": 48,
+      "feeds": [
+        "https://krebsonsecurity.com/feed/",
+        "https://www.bleepingcomputer.com/feed/",
+        "https://feeds.feedburner.com/TheHackersNews"
+      ]
+    }
+  },
+  {
+    "id": "selfhosted",
+    "description": "Self-hosting & homelab (selfh.st, Hacker News)",
+    "section": {
+      "name": "Self-Hosted & Homelab",
+      "stories": 3,
+      "max_age_hours": 168,
+      "feeds": [
+        "https://selfh.st/rss/",
+        "https://hnrss.org/frontpage?q=self-hosted+OR+homelab+OR+selfhosted"
+      ]
+    }
+  },
+  {
+    "id": "science",
+    "description": "Science (ScienceDaily, NPR, Guardian)",
+    "section": {
+      "name": "Science",
+      "stories": 4,
+      "max_age_hours": 72,
+      "feeds": [
+        "https://www.sciencedaily.com/rss/top/science.xml",
+        "https://feeds.npr.org/1007/rss.xml",
+        "https://www.theguardian.com/science/rss"
+      ]
+    }
+  },
+  {
+    "id": "space",
+    "description": "Space (NASA, Space.com)",
+    "section": {
+      "name": "Space",
+      "stories": 3,
+      "max_age_hours": 72,
+      "feeds": [
+        "https://www.nasa.gov/news-release/feed/",
+        "https://www.space.com/feeds/all"
+      ]
+    }
+  },
+  {
+    "id": "health",
+    "description": "Health (NPR, BBC)",
+    "section": {
+      "name": "Health",
+      "stories": 3,
+      "max_age_hours": 72,
+      "feeds": [
+        "https://feeds.npr.org/1128/rss.xml",
+        "https://feeds.bbci.co.uk/news/health/rss.xml"
+      ]
+    }
+  },
+  {
+    "id": "climate",
+    "description": "Climate & environment (Guardian)",
+    "section": {
+      "name": "Climate",
+      "stories": 3,
+      "max_age_hours": 72,
+      "feeds": [
+        "https://www.theguardian.com/environment/climate-crisis/rss",
+        "https://www.theguardian.com/environment/rss"
+      ]
+    }
+  },
+  {
+    "id": "sports",
+    "description": "Sports (BBC Sport, ESPN)",
+    "section": {
+      "name": "Sports",
+      "stories": 4,
+      "feeds": [
+        "https://feeds.bbci.co.uk/sport/rss.xml",
+        "https://www.espn.com/espn/rss/news"
+      ]
+    }
+  }
+]

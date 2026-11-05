@@ -1,0 +1,9 @@
+# your personal settings and state
+config.json
+editions/
+history.json
+used.json
+shortlinks.json
+__pycache__/
+*.pyc
+.DS_Store
